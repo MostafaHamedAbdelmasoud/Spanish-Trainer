@@ -47,10 +47,13 @@ select{flex:1;min-width:140px;padding:9px 10px;border:1px solid var(--line);bord
 .src button:hover{background:#f3ece7}
 .chk{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--mut);margin:-4px 0 12px;cursor:pointer;user-select:none}
 .chk input{accent-color:var(--red);width:15px;height:15px}
+.qpick{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.qpick label{font-size:13px;color:var(--mut);white-space:nowrap}
+.qpick select{flex:1}
 .empty{text-align:center;color:var(--mut);padding:40px 18px;font-size:14px}
 </style></head><body><div class="wrap">
 <h1>Spanish vocabulary trainer</h1>
-<p class="sub" id="total">Loading vocabulary…</p>
+<p class="sub" id="total">Loading vocabulary from Excel…</p>
 
 <div class="src offline" id="src">
   <span class="dot"></span>
@@ -59,6 +62,7 @@ select{flex:1;min-width:140px;padding:9px 10px;border:1px solid var(--line);bord
   <input type="file" id="file" accept=".xlsx,.xlsm,.xls" style="display:none">
 </div>
 
+<div id="app" style="display:none">
 <div class="row">
   <select id="cat"></select>
   <select id="dir">
@@ -74,18 +78,18 @@ select{flex:1;min-width:140px;padding:9px 10px;border:1px solid var(--line);bord
 <div class="bar"><i id="prog"></i></div>
 <div id="view"></div>
 </div>
+<div class="empty" id="need">Choose your <b>Spanish_Vocabulary_Study.xlsx</b> file above to start.</div>
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
-/* Vocabulary is read live from Spanish_Vocabulary_Study.xlsx in this same folder.
-   The copy below is only a fallback for when that file can't be read. */
-const FALLBACK = {"Verbs": [["acostarse", "Lie down", 0], ["actuar", "act", 0], ["agarrar", "Grab", 0], ["ahogar", "Drown", 0], ["alcanzar", "Achieve", 0], ["aplastar", "crush", 0], ["apostar", "Bet", 0], ["apretar", "Squeeze", 0], ["apurar", "hurry", 0], ["arreglar", "Arrange- fix", 0], ["atravisar", "Cross", 0], ["Ayunar", "Fast from food V", 0], ["bendecir", "Bless", 0], ["bromear", "Joke (verb)", 0], ["burlarse de", "Make fun", 0], ["caer", "fall", 0], ["Cambiar", "Change", 0], ["casarse", "marry", 0], ["cazar", "Hunt", 0], ["coger", "Catch / pick", 0], ["comenzar", "Commence", 0], ["cometer", "commit", 0], ["compartir", "Share", 0], ["Complacer", "Please (verb)", 0], ["comprabar", "Check", 0], ["comprobar", "find out/check", 0], ["concedir", "Give / grant", 0], ["Conducir", "Drive", 0], ["Confundir", "Confuse", 0], ["conseguir", "Get", 0], ["Contar", "Count / tell", 0], ["contener", "contain", 0], ["contestar", "answer", 0], ["convertir", "converter", 0], ["Correr", "Run", 0], ["Creer", "Believe", 0], ["cuidar", "care", 0], ["debir", "should", 0], ["derretir", "melt", 0], ["desear", "want", 0], ["despedir", "Say good bye", 0], ["despertarse", "Wake up", 0], ["Destruir", "Destroy", 0], ["Dibujar", "Draw", 0], ["dirigir", "lead / direct movie", 0], ["divertir", "Have fun", 0], ["doblar", "Bend", 0], ["doler", "Feel pain - feel hurt", 0], ["empezar", "begin", 0], ["encender", "Light", 0], ["encontrar", "Find", 0], ["engañar", "deceive", 0], ["entregar", "Deliver - hand", 0], ["entrenar", "train or exercise (verb)", 0], ["envenenar", "Poison", 0], ["equivocarse", "to make a mistake", 0], ["esconder", "hide", 0], ["Filmar", "to film", 0], ["gastar", "Spend", 0], ["grabar", "Record", 0], ["gritar", "Scream", 0], ["Haz la colada", "Do the laundry", 0], ["herir", "Harm", 0], ["hincar", "Stick - sting", 0], ["Ilegar", "Arrive", 0], ["incendiar", "set Fire to", 0], ["jalar", "Pull", 0], ["levantarse", "Get up (not wake up)", 0], ["lograr", "achieve", 0], ["luchar", "Fight", 0], ["manejar", "drive", 0], ["medir", "Measure", 0], ["Meter", "Put it in", 0], ["montar", "Mount", 0], ["mostrar", "Show", 0], ["Nadar", "Swim", 0], ["Organizar", "Organize", 0], ["Oír", "Listen - hear", 0], ["Parar", "Stop - halt", 0], ["pasear", "walk", 0], ["pedir", "Ask", 0], ["perder", "Lose", 0], ["pillar", "Catch", 0], ["Pintar", "Paint", 0], ["planificar", "plan (verb)", 0], ["Poner", "Put", 0], ["publicar", "to publish", 0], ["Quemar", "Burn", 0], ["recibir", "receive", 0], ["resumir", "resume", 0], ["romper", "Break- smash", 0], ["Sacar", "Take it out", 0], ["Saltar", "Jump", 0], ["seguir", "Continue", 0], ["Sentar", "Sit", 0], ["sentir", "Feel", 0], ["servir", "Serve", 0], ["suber", "Go up", 0], ["suponer", "Suppose", 0], ["tirrar", "throw", 0], ["traer", "Bring (places)", 0], ["triturar", "Smash", 0], ["Unir", "Join", 0], ["vencer", "Beat / defeat", 0], ["Vendir", "Sell", 0], ["venir", "come", 0], ["Vestir", "Wear", 0], ["vestirse", "Wear", 0], ["Volar", "Fly", 0]], "Descriptions & Feelings": [["abierto/a", "open, outgoing", 0], ["aburrido/a", "boring", 0], ["Acogedor", "cozy, welcoming", 0], ["agradable", "pleasant, nice", 0], ["alegre", "cheerful / happy", 0], ["alto/a", "tall", 0], ["amable", "kind, polite", 0], ["ambiente", "atmosphere, ambiance", 0], ["ancha", "Wide", 0], ["antipático/a", "unfriendly, unpleasant", 0], ["asustado", "scared", 0], ["bajito/a", "short", 0], ["castaño", "Brown (used for hair)", 0], ["Centrico", "central (well-located)", 0], ["cerrado/a", "closed-minded / closed", 0], ["comodo", "comfortable", 0], ["compuesto", "compound", 0], ["concurrido", "Busy", 0], ["conduntente", "overwhelming-devastating", 0], ["Contenta", "Happy", 0], ["corrupto", "Corrupt", 0], ["Corto", "Short", 0], ["delgado/a", "slim / thin", 0], ["demasiado", "Too much", 0], ["Deportivo", "Sport", 0], ["desorganizado/a", "disorganized", 0], ["despistado/a", "absent-minded, scatterbrained", 0], ["Disfrazado", "Disguised", 0], ["divertido/a", "fun, funny", 0], ["duro", "Hard", 0], ["débil", "weak", 0], ["egoísta", "selfish", 0], ["encantador", "Charming - beloved", 0], ["enojado", "Angry", 0], ["estrecha", "Narrow", 0], ["feo/a", "ugly", 0], ["Frustrado", "Frustrated", 0], ["generoso/a", "generous", 0], ["gordito/a", "chubby", 0], ["guapo/a", "handsome / good-looking", 0], ["Historico", "historic", 0], ["impaciente", "impatient", 0], ["impuntual", "unpunctual, always late", 0], ["inteligente", "intelligent, smart", 0], ["interesante", "interesting", 0], ["irresponsable", "irresponsible", 0], ["lleno", "Full", 0], ["Luminoso", "bright, luminous", 0], ["majo/a", "nice / pleasant (mostly Spain)", 0], ["Misma/o", "Same", 0], ["Moderno", "modern", 0], ["moreno/a", "dark-haired / brunette", 0], ["nacido", "Born", 0], ["nerviosa", "Nervous", 0], ["normal", "normal", 0], ["Ocupado", "Busy", 0], ["organizado/a", "organized", 0], ["oscuro", "dark", 0], ["paciente", "patient", 0], ["Perezoso", "Lazy", 0], ["potente", "Potent - powerful", 0], ["predominante", "predominant - prevailing", 0], ["preocupado", "Worried", 0], ["presumido", "Arrogant", 0], ["puntual", "punctual, on time", 0], ["raro/a", "weird, strange", 0], ["recto", "straight", 0], ["Relajando", "Relaxed", 0], ["responsable", "responsible", 0], ["rizado", "curly", 0], ["rubio/a", "blond", 0], ["Ruidoso", "noisy", 0], ["Sano", "Healthy", 0], ["sencillo", "Simple", 0], ["serio/a", "serious", 0], ["simpático/a", "friendly, nice", 0], ["sociable", "sociable / outgoing", 0], ["sospechoso", "suspect", 0], ["sucio", "dirty", 0], ["Tierno", "Cute", 0], ["Tranquilo", "calm, quiet", 0], ["tranquilo/a", "calm, quiet", 0], ["tímido/a", "shy", 0], ["vacío", "Empty", 0]], "People, Family & Body": [["Abuela materna", "Grandmother from mom’s side", 0], ["Abuelo materno", "Grandfather from mom’s side", 0], ["Abuelo paterno", "Grandfather from dad’s side", 0], ["Apodo", "Nickname", 0], ["barriga", "Belly", 0], ["camarero", "waiter", 0], ["Cantante", "Singer", 0], ["Casado", "Married", 0], ["cintura", "waist", 0], ["criado", "Servant", 0], ["Cuñado/cuñada", "Brother/sister in law", 0], ["Diverociado", "Divorced", 0], ["dueña", "Landlord", 0], ["el aliento", "The breath", 0], ["el carnicero", "The butcher", 0], ["Ex esposo", "Ex husband", 0], ["granjera", "Farmer", 0], ["huesos", "Bones", 0], ["Jardinero", "gardener", 0], ["jefo", "Boss", 0], ["juerguista", "Person Loves parties", 0], ["Ladrones", "robbers", 0], ["lengua materna", "Mother tongue Languagex", 0], ["Mayor", "Major", 0], ["Menor", "Minor", 0], ["mesero", "Waiter", 0], ["Nieto/nieta", "Grand son/daughter", 0], ["nuera", "daughter-in-law", 0], ["obrero", "worker", 0], ["oreja", "Ear", 0], ["Palma de la mano", "forehand", 0], ["Parejas", "Partner", 0], ["pecho", "Chest", 0], ["Periodista", "Journalist", 0], ["Separados", "Separated", 0], ["Sobrino/sobrina", "Nephew/niece", 0], ["Soltero", "Single", 0], ["sonrisa", "Smile", 0], ["Viudo", "Widow", 0], ["yerno", "Son in law", 0]], "Food & Cooking": [["a la plancha", "grilled", 0], ["al vapor", "steamed", 0], ["Almuerzo", "Lunch", 0], ["artesanales", "handcrafted", 0], ["asado", "Roast", 0], ["Avena", "Oats", 0], ["bebida", "Beverage", 0], ["camarón", "Shrimp", 0], ["carbonizados", "charred", 0], ["casera", "Homemade", 0], ["casero", "homemade", 0], ["Cena", "dinner", 0], ["chuleta", "Chop meat", 0], ["cocido", "cooked", 0], ["cordero", "Sheep", 0], ["crudo", "raw", 0], ["Cuchara", "Spoon", 0], ["de cero", "From scratch", 0], ["Desayuno", "Breakfast", 0], ["fideos", "noodles", 0], ["gambas", "Shrimp", 0], ["guisado", "stew", 0], ["hervidos", "Boiled", 0], ["merienda", "snack", 0], ["MEZCLA DE", "MIXTURE OF", 0], ["palomitas", "Popcorn", 0], ["Pastel", "Cake", 0], ["pavos", "Turkey", 0], ["Pepino", "Cucumber", 0], ["pimienta", "Pepper", 0], ["postre", "Dessert", 0], ["Pulpo", "Octopus", 0], ["refrescos", "soft drinks", 0], ["setas", "Mushrooms", 0], ["vaso", "Glass", 0], ["verduras", "vegetables", 0], ["Zanahorias", "Carrots", 0]], "Objects, Home & Places": [["accesorio", "accessory", 0], ["alfombra", "rug / carpet", 0], ["algunas plazas", "some squares", 0], ["alquile", "rent", 0], ["amueblado", "Furnished", 0], ["avenidas", "الشوارع avenues", 0], ["bandera", "Flag", 0], ["bares", "bars", 0], ["Beis", "Beige color", 0], ["billetera", "Wallet", 0], ["boda", "Wedding", 0], ["cable", "Cable", 0], ["cajero automatico", "ATM", 0], ["calcetines", "socks", 0], ["camino", "Path - way", 0], ["centro comercial", "mall / shopping center", 0], ["cepillarse", "brush (teeth/hair)", 0], ["Cepillo de dientes", "Teeth brush", 0], ["Cine", "Cinema", 0], ["cines", "Cinemas", 0], ["Cita", "Appointment", 0], ["claro", "Light فاتح", 0], ["Cojín", "cushion", 0], ["contenedores de basura", "garbage containers", 0], ["correo", "Mail", 0], ["cuero", "leather", 0], ["De Tirantes", "cut sleeves", 0], ["Domicilio", "home address / residence", 0], ["El enchufe", "Plug", 0], ["el peldaño", "The step", 0], ["Entrevistas", "Interview", 0], ["escaleras", "stairs", 0], ["Estantería", "shelf / bookcase", 0], ["estilo", "Style", 0], ["Falda Corta / larga", "Skrit short/ long", 0], ["garaje", "Garage", 0], ["grapadora", "stapler", 0], ["Gris", "Gray", 0], ["iglesia", "church", 0], ["jabón", "soap", 0], ["Jarron", "vase", 0], ["Jersey", "Sweatshirt", 0], ["La esquina", "corner", 0], ["Lampara", "lamp", 0], ["Lila - morado", "Light purple", 0], ["Llave", "key", 0], ["Madera", "wood", 0], ["Manga", "Sleeve", 0], ["maquillarse", "Makeup", 0], ["Marrón", "Brown", 0], ["Odrenador", "Computer", 0], ["papel", "Paper", 0], ["Papelera", "bin", 0], ["paquetta", "Packet", 0], ["paradas de autobus", "bus stops", 0], ["Pasillo", "hallway / corridor", 0], ["Pasta de dientes", "Teeth paste", 0], ["pañuelo", "handkerchief", 0], ["peatonales", "pedestrian", 0], ["Piso", "Floor", 0], ["Polvo", "dust / powder", 0], ["prenda", "Piece of cloth", 0], ["pulsera", "bracelet", 0], ["Ropa interior", "Interior clothes", 0], ["Secador", "Dryer", 0], ["Sendero", "Path", 0], ["Sillion", "armchair (sillón)", 0], ["Tallas", "Sizes", 0], ["Toalla", "Towel", 0], ["Un traje", "Suit", 0], ["Una Cuadra", "Block", 0], ["una estación de metro", "a subway station", 0], ["una zona peatonal", "a pedestrian zone", 0], ["Unos pantalones Cortos", "Short pants", 0], ["verja", "Gate", 0], ["Vestido", "Dress", 0], ["vidrio", "glass", 0]], "Nature & Animals": [["Arbol", "Tree", 0], ["Barro", "Mud", 0], ["bosques", "Forests", 0], ["caballos", "Horses", 0], ["cabras", "Goats", 0], ["campo", "field", 0], ["cascadas", "waterfalls", 0], ["estrellas", "Stars", 0], ["flor", "flower", 0], ["gallinas", "chickens", 0], ["gorra-sombrero", "Cap", 0], ["gorriones", "Sparrows عصافير", 0], ["invienro", "Winter", 0], ["isla", "Island", 0], ["La sombra", "Shadow", 0], ["maravillas", "Wonders", 0], ["murciélagos", "Bats", 0], ["Nieve", "Snow", 0], ["nublado", "Cloudy", 0], ["Ola", "Wave", 0], ["orilla", "Shore", 0], ["ovejas", "Sheep", 0], ["pajaros", "birds", 0], ["patos", "ducks", 0], ["ratones", "mice", 0], ["Resfrio", "Flu - cold", 0], ["río", "river", 0], ["tierra", "Land", 0], ["verano", "Summer", 0], ["viento", "wind", 0]], "Time & Everyday Phrases": [["A las siete", "At 7 o’clock", 0], ["a menudo", "Often", 0], ["a pie", "Walking", 0], ["A Qué hora?", "In what time?", 0], ["a veces", "Sometimes", 0], ["abre", "open", 0], ["Acabar de", "Just", 0], ["Acabo de", "I just", 0], ["acostombro", "I am used to", 0], ["actitud", "Attitude", 0], ["Adémas", "Also", 0], ["Ahora vuelvo", "I will come back", 0], ["Al lado", "Beside", 0], ["Alegría", "Joy", 0], ["Alguna vez", "Once / sometime", 0], ["algunos", "some", 0], ["Alma", "Soul", 0], ["anuncio", "advertisement", 0], ["Apagado", "Off", 0], ["apoyo", "support", 0], ["Apuesto", "I bet", 0], ["aquí al lado.", "Right next door.", 0], ["aquí mismo.", "Right here", 0], ["artesanía", "craftsmanship", 0], ["atreve", "dare", 0], ["Ayuno", "Fasting", 0], ["baloncesto", "basketball", 0], ["bastante cerca.", "Quite close.", 0], ["Bien/mal comunicado", "well/poorly connected (transport)", 0], ["brevemente", "briefly", 0], ["bromitas", "Jokes", 0], ["Buenos deseos", "Best wishes", 0], ["cadena", "chain", 0], ["Cantidad", "Quantity", 0], ["casi", "almost", 0], ["conjunto", "set / outfit", 0], ["conocimiento", "Knowledge", 0], ["consejo", "Advise", 0], ["corrige", "Correct (verb)", 0], ["cuarto", "Quarter", 0], ["de hecho", "In fact", 0], ["de ninguna manera", "No way", 0], ["De primero", "Firstly", 0], ["de qué trata", "What is it about?", 0], ["delante - en frente de", "In front of", 0], ["deportes", "Sports", 0], ["Desastre", "Disaster", 0], ["descubro", "I discover", 0], ["Desde", "From", 0], ["despierta", "wake up", 0], ["Detallas", "Details", 0], ["Duda", "Doubt", 0], ["echarle un ojo", "Keep an eye on", 0], ["ejircicio", "exercise", 0], ["El domingo", "Sunday", 0], ["El jueves", "Thursday", 0], ["El lunes", "Monday", 0], ["El martes", "Tuesday", 0], ["El menos", "At least", 0], ["El miércoles", "Wednesday", 0], ["el siglo", "century", 0], ["El sábado", "Saturday", 0], ["El viernes", "Friday", 0], ["En punto", "Exactly", 0], ["En vez de", "Instead of", 0], ["Encargarse de", "Handle - take charge of", 0], ["equipo de football", "Football team", 0], ["esposas", "handcuffs", 0], ["Esquiar", "Skiing", 0], ["está a + number", "it's ___ away (distance)", 0], ["ganas", "Desire", 0], ["Gobierno", "Government", 0], ["guerra", "war", 0], ["guión", "Script", 0], ["hablidad", "Ability", 0], ["incomoda", "uncomfortable", 0], ["intentar - probar", "try", 0], ["la actualidad", "Currently", 0], ["lentamente", "Slowly", 0], ["Ligar", "Flirt -", 0], ["Lo peor", "The worst", 0], ["Lo que menos me gusta", "what I like least", 0], ["Lo que más me gusta", "what I like most", 0], ["Luego", "After that", 0], ["Mandar - enviar", "Send", 0], ["Manera", "Way", 0], ["matar - asesinar", "kill - murder", 0], ["me corrige", "Corrects me", 0], ["Me cuesta", "it's hard for me", 0], ["Me da igual", "I don’t care", 0], ["me encargo", "I'll take care of it", 0], ["Media", "half", 0], ["Menos", "Minus", 0], ["meta", "goal", 0], ["Miedo", "fear", 0], ["mientras", "While", 0], ["Minutos", "Minutes", 0], ["muestra", "sample", 0], ["muy cerca.", "Very close.", 0], ["Ningún (male)", "No", 0], ["nivel", "level", 0], ["No es ningún problema", "No problem.", 0], ["No hace falta", "It's not necessary", 0], ["No pasa nada", "No problem", 0], ["no te ofendas", "Don't be offended", 0], ["nota", "Notice", 0], ["olvide", "Forget", 0], ["oracion", "Prayer - statement", 0], ["oí que", "I heard that", 0], ["Parece", "Seems", 0], ["Partido", "Game", 0], ["pelicula", "Movie", 0], ["Pinta", "Look like", 0], ["por desgracia", "Unfortunately", 0], ["privilegio", "Privilege", 0], ["protagonizada", "starring", 0], ["Pruebalo", "Try it", 0], ["Que le debo?", "How much I owe you?", 0], ["quietos", "Still or don’t move", 0], ["quitamre", "Remove", 0], ["qué hora tienes?", "What time is it?", 0], ["rato", "A while", 0], ["recupere", "Recover", 0], ["Recursos", "Resources", 0], ["reglas", "rules", 0], ["revistas", "magazines", 0], ["Segundos", "Seconds", 0], ["según", "according to", 0], ["señal", "Sign", 0], ["sigues", "Follow (instruction)", 0], ["sueño", "Dream", 0], ["supongo", "I Suppose - i guess", 0], ["tareas", "Tasks", 0], ["ten cuidado", "be careful", 0], ["Tentacion", "Temptation", 0], ["Todavia no", "Not yet", 0], ["tontorías", "Silly/non sense", 0], ["Trae", "Bring", 0], ["Tren", "Train", 0], ["trucos", "Tricks", 0], ["Ultimamente", "Recently", 0], ["Ventajas", "Advantages", 0], ["vergüenza", "shame", 0], ["vuelta", "around", 0], ["Zonas", "Zones", 0], ["ámbito", "Scope", 0]]};
+/* Vocabulary is ALWAYS read from Spanish_Vocabulary_Study.xlsx — no words are stored in this file. */
 const XLSX_NAME = 'Spanish_Vocabulary_Study.xlsx';
 
 let DATA = {}, cats = [];
 let mode='flash', catSel='__ALL__', dir='es', hideKnown=false;
 let deck=[], idx=0, flipped=false;
-let quiz=[], qi=0, qScore=0, answered=false;
+let quiz=[], qi=0, qScore=0, answered=false, wrong=[];
 
 /* ---------- reading the workbook ---------- */
 // Sheet = category. Row 1 title, row 2 headers, data from row 3.
@@ -98,8 +102,8 @@ function parseWorkbook(buf){
     const words = [];
     rows.slice(2).forEach(r=>{
       if(!r) return;
-      const es = (r[0]||'').toString().trim();
-      const en = (r[1]||'').toString().trim();
+      const es = (r[0]||'').toString().replace(/\s+/g,' ').trim();
+      const en = (r[1]||'').toString().replace(/\s+/g,' ').trim();
       if(!es || !en) return;
       if(es.toLowerCase()==='español') return;         // in case of a repeated header
       const known = (r[2]!==undefined && r[2]!==null && r[2].toString().trim()!=='') ? 1 : 0;
@@ -129,10 +133,9 @@ async function boot(){
     return;
   }catch(e){ /* falls through — usually the file:// restriction */ }
 
-  // 2. Couldn't read it directly. Use the built-in copy, offer the picker.
-  DATA = JSON.parse(JSON.stringify(FALLBACK));
-  setSource('offline', 'Built-in copy — pick the Excel file to load your latest edits', true);
-  init();
+  // 2. Couldn't read it — the Excel file is required, so ask for it.
+  setSource('offline', 'Excel file required — choose Spanish_Vocabulary_Study.xlsx to start', true);
+  document.getElementById('total').textContent = 'No vocabulary loaded yet';
 }
 
 document.getElementById('file').onchange = e=>{
@@ -154,6 +157,8 @@ document.getElementById('file').onchange = e=>{
 
 /* ---------- setting up the controls ---------- */
 function init(){
+  document.getElementById('app').style.display='';
+  document.getElementById('need').style.display='none';
   cats = Object.keys(DATA);
   const tot = cats.reduce((s,c)=>s+DATA[c].length,0);
   const known = cats.reduce((s,c)=>s+DATA[c].filter(w=>w[2]).length,0);
@@ -221,17 +226,26 @@ function flip(){flipped=!flipped;renderFlash();}
 function next(){idx=(idx+1)%deck.length;flipped=false;renderFlash();}
 function prev(){idx=(idx-1+deck.length)%deck.length;flipped=false;renderFlash();}
 
-function startQuiz(){const p=pool();quiz=shuffle(p).slice(0,Math.min(12,p.length));qi=0;qScore=0;answered=false;renderQuiz();}
+function startQuiz(list){quiz=shuffle(list?list.slice():pool());qi=0;qScore=0;wrong=[];answered=false;renderQuiz();}
+function pagePicker(){
+  let h='<div class="qpick"><label>Page</label><select onchange="pickPage(this.value)">';
+  h+='<option value="__ALL__"'+(catSel==='__ALL__'?' selected':'')+'>All pages</option>';
+  cats.forEach(c=>{h+='<option value="'+esc(c)+'"'+(c===catSel?' selected':'')+'>'+esc(c)+' ('+DATA[c].length+')</option>';});
+  return h+'</select></div>';
+}
+function pickPage(v){catSel=v;document.getElementById('cat').value=v;rebuild();}
 function renderQuiz(){
   if(qi>=quiz.length){
     setProg(1);
-    document.getElementById('view').innerHTML='<div class="card"><div class="done"><div class="n">'+qScore+'/'+quiz.length+'</div><div class="small" style="margin:8px 0 14px">'+(qScore>=quiz.length*0.8?'¡Excelente!':qScore>=quiz.length*0.5?'Good progress — keep going.':'Keep practising, you\'ll get there.')+'</div></div></div><div class="nav"><button class="pri" onclick="startQuiz()">New quiz ↻</button></div>';
+    let mis='';
+    if(wrong.length){mis='<div style="text-align:left;margin-top:6px;font-size:14px">'+wrong.map(w=>'<div style="padding:6px 0;border-top:1px solid var(--line)"><b>'+esc(w.es)+'</b> — '+esc(w.en)+'</div>').join('')+'</div>';}
+    document.getElementById('view').innerHTML=pagePicker()+'<div class="card" style="cursor:default"><div class="done"><div class="n">'+qScore+'/'+quiz.length+'</div><div class="small" style="margin:8px 0 6px">'+(qScore>=quiz.length*0.8?'¡Excelente!':qScore>=quiz.length*0.5?'Good progress — keep going.':'Keep practising, you\'ll get there.')+'</div>'+(wrong.length?'<div class="small">Words you missed ('+wrong.length+'):</div>'+mis:'')+'</div></div><div class="nav">'+(wrong.length?'<button onclick="startQuiz(wrong)">Retry missed ('+wrong.length+')</button>':'')+'<button class="pri" onclick="startQuiz()">Restart page ↻</button></div>';
     return;}
   setProg(qi/quiz.length);
   const c=quiz[qi];const q=dir==='es'?c.es:c.en;const ans=dir==='es'?c.en:c.es;
-  const others=shuffle(pool().filter(x=>(dir==='es'?x.en:x.es)!==ans)).slice(0,3).map(x=>dir==='es'?x.en:x.es);
+  const others=[...new Set(shuffle(pool()).map(x=>dir==='es'?x.en:x.es).filter(v=>v.toLowerCase()!==ans.toLowerCase()))].slice(0,3);
   const opts=shuffle([ans,...others]);
-  let h='<div class="score">Score '+qScore+' · Question '+(qi+1)+' of '+quiz.length+'</div>'+
+  let h=pagePicker()+'<div class="score">Score '+qScore+' · Question '+(qi+1)+' of '+quiz.length+'</div>'+
    '<div class="qsub">'+(dir==='es'?'What does this mean?':'How do you say this?')+'</div>'+
    '<div class="q">'+esc(q)+'</div><div id="opts">';
   opts.forEach(o=>{h+='<button class="opt" data-v="'+esc(o)+'" onclick="answer(this)">'+esc(o)+'</button>';});
@@ -244,7 +258,7 @@ function answer(btn){
   if(answered)return;answered=true;
   const correct=document.getElementById('opts').dataset.ans;
   document.querySelectorAll('#opts .opt').forEach(b=>{if(b.dataset.v===correct)b.classList.add('ok');});
-  if(btn.dataset.v===correct){qScore++;}else{btn.classList.add('no');}
+  if(btn.dataset.v===correct){qScore++;}else{btn.classList.add('no');wrong.push(quiz[qi]);}
   setTimeout(()=>{qi++;renderQuiz();},900);
 }
 
